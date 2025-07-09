@@ -108,8 +108,16 @@ func (k *RSAKeyPair) VerifySignature(data []byte, signature []byte) error {
 	return rsa.VerifyPKCS1v15(k.publicKey, crypto.SHA256, hashed[:], signature)
 }
 
-// PrintPublicKey 打印公钥信息
-func (k *RSAKeyPair) PrintPublicKey() {
+// PrintKeys 打印公私钥信息
+func (k *RSAKeyPair) PrintKeys() {
+	// 编码私钥
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(k.privateKey)
+	privateKeyPem := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	})
+
+	// 编码公钥
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(k.publicKey)
 	if err != nil {
 		log.Printf("Error marshaling public key: %v", err)
@@ -119,13 +127,17 @@ func (k *RSAKeyPair) PrintPublicKey() {
 		Type:  "RSA PUBLIC KEY",
 		Bytes: publicKeyBytes,
 	})
+
+	fmt.Println("私钥信息:")
+	fmt.Println(string(privateKeyPem))
+
 	fmt.Println("公钥信息:")
 	fmt.Println(string(publicKeyPem))
 }
 
 func main() {
 	// 1. 执行POW计算
-	nickname := "DeepSeek"
+	nickname := "lumos"
 	pow := NewPOW(nickname)
 	pow.Compute(4)
 	pow.PrintResult(4)
@@ -136,7 +148,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("生成密钥对失败: %v", err)
 	}
-	keyPair.PrintPublicKey()
+	keyPair.PrintKeys()
 
 	// 3. 使用私钥签名
 	signature, err := keyPair.SignData([]byte(pow.data))
