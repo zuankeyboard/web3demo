@@ -20,6 +20,11 @@ import "./interfaces/IBank.sol";
 // 用数组记录存款金额的前 3 名用户
 
 contract Bank is IBank {
+    // 新增事件
+    event Deposited(address indexed user, uint256 amount);
+    event Withdrawn(address indexed admin, uint256 amount);
+    event AdminTransferred(address indexed previousAdmin, address indexed newAdmin);
+
     // 管理员地址
     address public admin;
     
@@ -33,6 +38,9 @@ contract Bank is IBank {
     constructor() {
         admin = msg.sender;
         // addressToAmount[msg.sender] = msg.value; 若部署存款 则设置构造函数为payable
+
+        // emit AdminTransferred(address(0), admin);
+        emit AdminTransferred(address(0), msg.sender);  // 记录初始管理员
     }
 
     modifier onlyAdmin {
@@ -53,6 +61,8 @@ contract Bank is IBank {
         addressToAmount[msg.sender] += msg.value;
 
         updateTopDepositors(msg.sender);
+
+        emit Deposited(msg.sender, msg.value);
     }
 
     function updateTopDepositors(address addr) internal {
@@ -88,11 +98,13 @@ contract Bank is IBank {
         require(address(this).balance >= amount, "Insufficient contract balance");
 
         (bool success, ) = admin.call{value : amount}("");
+        // (bool success, ) = admin.call{value : amount * 10 ** 18}("");
         require(success, "Withdrawal failed.");
 
         // addressToAmount[msg.sender] -= amount; // 管理员存款后扣除
     
         // emit Withdrawl(amount);
+        emit Withdrawn(msg.sender, amount);
     }
 
     function displayBalance() public view returns(address[3] memory, uint[3] memory) {
